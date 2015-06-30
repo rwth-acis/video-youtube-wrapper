@@ -1,0 +1,219 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+An element that behaves like a native HTML5 video but that's actually magically wrapping a google-youtube element.
+
+Example:
+
+    <video-youtube-wrapper>
+        <google-youtube
+            video-id="..."
+            height="270px"
+            width="480px"
+            rel="0"
+            start="0"
+            autoplay="1">
+        </google-youtube>
+    </video-youtube-wrapper>
+
+@demo
+-->
+<dom-module id="video-youtube-wrapper">
+
+    <style>
+
+        :host {
+            display: block;
+            box-sizing: border-box;
+        }
+
+    </style>
+
+    <template>
+        <content></content>
+    </template>
+
+</dom-module>
+
+<script>
+
+    Polymer({
+        is: 'video-youtube-wrapper',
+
+        properties: {
+
+            /**
+             * Exposes the current playback time, in seconds.
+             *
+             * You can divide this value by the `duration` to determine the playback percentage.
+             */
+            currentTime: {
+                type: Number,
+                value: 0,
+                notify: true
+            },
+
+            /**
+             * Exposes the video duration, in seconds.
+             *
+             * You can divide the `currenttime` to determine the playback percentage.
+             *
+             * @attribute duration
+             * @type number
+             */
+            duration: {
+                type: Number,
+                value: 1, // To avoid divide-by-zero errors if used before video is cued.
+                notify: true
+            }
+
+        },
+
+        // Element Lifecycle
+
+        ready: function() {
+            // `ready` is called after all elements have been configured, but
+            // propagates bottom-up. This element's children are ready, but parents
+            // are not.
+            //
+            // This is the point where you should make modifications to the DOM (when
+            // necessary), or kick off any processes the element wants to perform.
+        },
+
+        attached: function() {
+            // `attached` fires once the element and its parents have been inserted
+            // into a document.
+            //
+            // This is a good place to perform any work related to your element's
+            // visual state or active behavior (measuring sizes, beginning animations,
+            // loading resources, etc).
+
+            this._player = this.querySelector("google-youtube");
+
+            this._player.addEventListener("google-youtube-ready", this._googleyoutubeready.bind(this));
+            this._player.addEventListener("google-youtube-state-change", this._googleyoutubestatechange.bind(this));
+        },
+
+        detached: function() {
+            // The analog to `attached`, `detached` fires when the element has been
+            // removed from a document.
+            //
+            // Use this to clean up anything you did in `attached`.
+        },
+
+        // Element Behavior
+
+        /**
+         * The `loadedmetadata` event is fired whenever the video has been loaded and is ready to play.
+         *
+         * @event loadedmetadata
+         * @detail {Object}
+         */
+
+        /**
+         * The `timeupdate` event is fired whenever the video's currentTime has been changed.
+         *
+         * @event loadedmetadata
+         * @detail {Object}
+         */
+
+        /**
+         * The `ended` event is fired whenever the video has been ended.
+         *
+         * @event loadedmetadata
+         * @detail {Object}
+         */
+
+        /**
+         * Plays the current video.
+         *
+         * Note that on certain mobile browsers, playback
+         * [can't be initiated programmatically](https://developers.google.com/youtube/iframe_api_reference#Mobile_considerations).
+         *
+         * If `this.playsupported` is not `true`, calling `play()` will have no effect.
+         *
+         * @method play
+         */
+        play: function () {
+            if (this._player && this._player.playVideo && this.playsupported) {
+                this._player.playVideo();
+            }
+        },
+
+        /**
+         * Pauses the current video.
+         *
+         * @method pause
+         */
+        pause: function() {
+            if (this._player && this._player.pauseVideo) {
+                this._player.pauseVideo();
+            }
+        },
+
+        /**
+         * A listener for google-youtube-ready events.
+         *
+         * @private
+         */
+        _googleyoutubeready: function(e) {
+            this.fire('loadedmetadata', e);
+        },
+
+        /**
+         * A listener for google-youtube-state-change events. Checks if the video has ended and fires a new event.
+         *
+         * @param e
+         * @private
+         */
+        _googleyoutubestatechange: function(e) {
+            this.duration = this._player.duration;
+            this.currenttime = this._player._player.getCurrentTime();
+
+            switch (e.detail.data) {
+                case 0:
+                    this.fire('ended', e);
+                    clearInterval(this._timeupdateInterval);
+                    break;
+                case 1:
+                    this._timeupdateInterval = setInterval(this._updatePlaybackStats.bind(this), 250);
+                    break;
+                case 2:
+                    clearInterval(this._timeupdateInterval);
+                    break;
+                case 3:
+                    clearInterval(this._timeupdateInterval);
+                default:
+                    break;
+            }
+        },
+
+        /**
+         * The timeout that is active during playing.
+         */
+        _timeupdateInterval: null,
+
+        /**
+         * Updates some internals like currentTime.
+         *
+         * @private
+         */
+        _updatePlaybackStats: function() {
+            // unfortunately google-youtube only returns Math.rounded seconds.
+            this.currenttime = this._player._player.getCurrentTime();
+
+            this.fire('timeupdate', null);
+        }
+
+    });
+
+</script>
