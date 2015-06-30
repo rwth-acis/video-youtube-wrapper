@@ -59,13 +59,14 @@ Example:
             currentTime: {
                 type: Number,
                 value: 0,
-                notify: true
+                notify: true,
+                observer: '_currentTimeChanged'
             },
 
             /**
              * Exposes the video duration, in seconds.
              *
-             * You can divide the `currenttime` to determine the playback percentage.
+             * You can divide the `currentTime` to determine the playback percentage.
              *
              * @attribute duration
              * @type number
@@ -144,8 +145,8 @@ Example:
          * @method play
          */
         play: function () {
-            if (this._player && this._player.playVideo && this.playsupported) {
-                this._player.playVideo();
+            if (this._player) {
+                this._player.play();
             }
         },
 
@@ -155,8 +156,25 @@ Example:
          * @method pause
          */
         pause: function() {
-            if (this._player && this._player.pauseVideo) {
-                this._player.pauseVideo();
+            if (this._player) {
+                this._player.pause();
+            }
+        },
+
+        /**
+         * A flag saying whether the currentTime was changed externally (false) or internally (true).
+         */
+        _currentTimeLocked: false,
+
+        /**
+         * A listener to changes of the currentTime property.
+         */
+        _currentTimeChanged: function(e) {
+            if (this._player && !this._currentTimeLocked) {
+                // set video to the currentTime
+                clearInterval(this._timeupdateInterval);
+                this._player._player.seekTo(e);
+                this._timeupdateInterval = setInterval(this._updatePlaybackStats.bind(this), 250);
             }
         },
 
@@ -170,24 +188,36 @@ Example:
         },
 
         /**
+         * A flag indicating whether the YouTube API has already loaded the video.
+         */
+        _videoLoaded: false,
+
+        /**
          * A listener for google-youtube-state-change events. Checks if the video has ended and fires a new event.
          *
          * @param e
          * @private
          */
         _googleyoutubestatechange: function(e) {
-            this.duration = this._player.duration;
-            this.currenttime = this._player._player.getCurrentTime();
+            this.duration = this._player._player.getDuration();
+            this.currentTime = this._player._player.getCurrentTime();
 
             switch (e.detail.data) {
                 case 0:
+                    // ended
                     this.fire('ended', e);
                     clearInterval(this._timeupdateInterval);
                     break;
                 case 1:
+                    // playing
+                    if (!this._videoLoaded) {
+                        this._videoLoaded = true;
+                        this._player.pause();
+                    }
                     this._timeupdateInterval = setInterval(this._updatePlaybackStats.bind(this), 250);
                     break;
                 case 2:
+                    // paused
                     clearInterval(this._timeupdateInterval);
                     break;
                 case 3:
@@ -209,7 +239,9 @@ Example:
          */
         _updatePlaybackStats: function() {
             // unfortunately google-youtube only returns Math.rounded seconds.
-            this.currenttime = this._player._player.getCurrentTime();
+            this._currentTimeLocked = true;
+            this.currentTime = this._player._player.getCurrentTime();
+            this._currentTimeLocked = false;
 
             this.fire('timeupdate', null);
         }
