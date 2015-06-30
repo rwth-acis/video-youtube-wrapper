@@ -1,0 +1,39 @@
+{
+  "name": "video-youtube-wrapper",
+  "authors": [
+    "István Koren"
+  ],
+  "description": "An element that behaves like a native HTML5 video but that's actually magically wrapping a google-youtube element.",
+  "keywords": [
+    "web-component",
+    "web-components",
+    "polymer",
+    "seed"
+  ],
+  "main": "video-youtube-wrapper.html",
+  "license": "https://github.com/rwth-acis/video-youtube-wrapper/LICENSE",
+  "homepage": "https://github.com/rwth-acis/video-youtube-wrapper/",
+  "ignore": [
+    "/.*",
+    "/test/",
+    "/demo/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "web-component-tester": "*",
+    "google-youtube": "GoogleWebComponents/google-youtube#^1.0.0"
+  },
+  "_release": "fc05c3f38a",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "fc05c3f38ae602e941dcbbcde399d7c116648458"
+  },
+  "_source": "git://github.com/rwth-acis/video-youtube-wrapper.git",
+  "_target": "master",
+  "_originalSource": "rwth-acis/video-youtube-wrapper",
+  "_direct": true
+}
